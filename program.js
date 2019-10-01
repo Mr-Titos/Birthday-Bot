@@ -110,10 +110,18 @@ function timerBirthday() {
     tabBirthhday.Birthday.forEach(Birthday => {
         if(dat.getDate() +'-' + (dat.getMonth() + 1) == Birthday.day + '-' + Birthday.month && Birthday.etat == "false") {
             var serv = bot.guilds.get(Birthday.id);
-            var general = serv.channels.find(c => c.name == "general" && c.type == "text" || c.name == "général" && c.type == "text");
             var age = parseInt(dat.getUTCFullYear()) - Birthday.year;
-            general.send("@everyone Joyeux anniversaire à <@" + Birthday.name + "> ! " + Birthday.label + " a maintenant " + age + " ans de moins à vivre !");
-            console.log("Joyeux anniversaire " + Birthday.label + "! Ca fait " + age + " ans");
+            try{
+                var general = serv.channels.find(c => c.name == "anniversaire" && c.type == "text");
+                general.send("@everyone Joyeux anniversaire à <@" + Birthday.name + "> ! " + Birthday.label + " a maintenant " + age + " ans de moins à vivre !");
+
+            } catch { 
+                serv.createChannel("anniversaire", "text").then(function(chan) {
+                    chan.send("@everyone Joyeux anniversaire à <@" + Birthday.name + "> ! " + Birthday.label + " a maintenant " + age + " ans de moins à vivre !");
+    
+                })  
+            }
+            console.log("Joyeux anniversaire " + Birthday.label + " ! Ca fait " + age + " ans");
             Birthday.etat = "true";
         }
     })
