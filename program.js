@@ -17,7 +17,7 @@ try {
 bot.on('ready', function () {
   console.log("Birthday-Bot connecté !");
   setInterval(timerBirthday, 1800000);  //30 minutes = 1800000 ms
-  setInterval(resetTimer, 259200000); // 3 days
+  setInterval(resetTimer, 259200000); // 3 days = 259200000 ms
 fs.readFile('prefix.txt', 'utf8', (err, StringTemp) => {
     if (err) {
         console.log("File read failed:", err)
@@ -55,8 +55,19 @@ if(msg.author.bot == false ) {
                 });
             } else 
                 msg.reply("Vous devez être admin pour utiliser cette commande !");
+        } else if(msg.content.substring(1,17) == "birthday remove ") {
+            if(msg.member.hasPermission("ADMINISTRATOR")) {
+                removeBirthdayAdmin(msg).then(function(res) {
+                    loadBirthday();
+                    msg.reply("l'anniversaire a bien été supprimé");
+                }).catch(function(err) {
+                    if(err == "No occurence")
+                        msg.reply("Aucun anniversaire n'est enregistré en ce nom sur ce serveur")
+                });
+            } else
+                msg.reply("Vous devez être admin pour utiliser cette commande !");
         } else if(msg.content.substring(1, 5) == "help") {
-            msg.reply("3 commandes sont disponibles : \r\n- " + prefix + "birthday add @mention Jour Mois Annee (Seulement pour les admins) \r\n- " + prefix + "add birthday Jour Mois Annee (Enregistre juste son anniversaire) \r\n- " + prefix + "prefix <Nouveau Prefix> \r\n- " + prefix + "help")
+            msg.reply("6 commandes sont disponibles : \r\n- " + prefix + "birthday add @mention Jour Mois Annee (Seulement pour les admins) \r\n- " + prefix + "birthday remove @mention (Seulement pour les admins) \r\n- " + prefix + "add birthday Jour Mois Annee (Enregistre juste son anniversaire) \r\n- " + prefix + "remove birthday (Supprime juste son anniversaire) \r\n- " + prefix + "prefix <Nouveau Prefix> \r\n- " + prefix + "help");
         } else if(msg.content.substring(1,14) == "add birthday ") {
             var validiteBirthday2 = true;
                 addBirthday(msg).catch(function(err) { msg.reply(err); validiteBirthday2 = false; }).then(function() {
@@ -68,6 +79,14 @@ if(msg.author.bot == false ) {
                         validiteBirthday2 = true;
                     }
                 });
+        } else if(msg.content.substring(1).trim() == "remove birthday" || msg.content.substring(1).trim() == "rm birthday") {
+            removeBirthday(msg.author.id, msg.guild.id).then(function(res) {
+                loadBirthday();
+                msg.reply("Votre anniversaire a bien été supprimé");
+            }).catch(function(err) {
+                if(err == "No occurence")
+                    msg.reply("Aucun anniversaire n'est enregistré en votre nom sur ce serveur")
+            });
         }
         else if(msg.content.substring(1,7) == "prefix") {
             loadPrefix(msg.content.substring(8,9));
@@ -218,7 +237,7 @@ function processBirthday(msg, idfinal) {
         dayBirthday = splitmsg[2].trim();
         monthBirthday = splitmsg[3].trim();
         yearBirthday = splitmsg[4].trim();
-        
+
         if(!(dayBirthday *1 <32 && dayBirthday*1 > 0) || !(monthBirthday*1 > 0 && monthBirthday*1 < 13) || !(yearBirthday*1 > 1950 && yearBirthday*1 < 2019)) {
             reject();
         } else {
@@ -241,6 +260,68 @@ function verifBirthday(idTemp, name) {
                 }
             }
         })
+    });
+}
+
+function removeBirthday(id,guildId) {
+    //command frame : <prefix>remove birthday
+    return new Promise(function (resolve, reject) {
+        try {
+            var compteur = 0;
+            tabBirthhday.Birthday.forEach(Birthday => {
+                if(Birthday.id == guildId && Birthday.name == id) {
+                    tabBirthhday.Birthday.splice(tabBirthhday.Birthday.indexOf(Birthday),1);
+                    stringifyBirthday = JSON.stringify(tabBirthhday, null, 2);
+                   fs.writeFile('Birthday.json', stringifyBirthday, (err) => {
+                        if (err) throw err;
+                        else {
+                            console.log('Birthday of ' + Birthday.label + ' on the server ' + Birthday.id +' remove from file');
+                            resolve();
+                        }
+                    });
+                } else {
+                    compteur ++;
+                    if(compteur == tabBirthhday.Birthday.length) {
+                        reject("No occurence");
+                    }
+                }
+            });
+    } catch (err) {reject(err);}
+    });
+}
+
+function removeBirthdayAdmin(msg) {
+    //command frame : <prefix>birthday remove <!id>
+    return new Promise(function (resolve, reject) {
+        try {
+            var compteur = 0;
+            var guildId = msg.guild.id;
+            var splitmsg = msg.content.split(' ');
+            var finalId = "<";
+            Array.from(splitmsg[2]).forEach(msg2 => {
+                if(msg2 != '<' && msg2 != '>' && msg2 != '@' && msg2 != ' ') {
+                    finalId += msg2;
+                }
+            }); 
+            tabBirthhday.Birthday.forEach(Birthday => {
+                if(Birthday.id == guildId && Birthday.name == finalId.substring(1)) {
+                   tabBirthhday.Birthday.splice(tabBirthhday.Birthday.indexOf(Birthday),1);
+                   stringifyBirthday = JSON.stringify(tabBirthhday, null, 2);
+                   fs.writeFile('Birthday.json', stringifyBirthday, (err) => {
+                        if (err) throw err;
+                        else {
+                            console.log('Birthday of ' + Birthday.label + ' on the server ' + Birthday.id +' remove from file');
+                            resolve();
+                        }
+                    });
+                } else {
+                    compteur ++;
+                    if(compteur == tabBirthhday.Birthday.length) {
+                        reject("No occurence");
+                    }
+                }
+            });
+    } catch (err) {reject(err);}
     });
 }
 
