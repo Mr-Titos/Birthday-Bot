@@ -343,8 +343,8 @@ function loadPrefix(prefixTemp) {
 }
 
 function resetTimer() {
-    anniv_Aincrad.forEach(Birthday => {
-        Birthday.etat = false;
+    tabBirthhday.Birthday.forEach(Birthday => {
+        Birthday.etat = "false";
     })
 }
 
