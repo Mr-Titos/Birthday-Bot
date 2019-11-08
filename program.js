@@ -2,6 +2,7 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 const fs = require('fs');
+const axios = require('axios');
 const token = process.env.DISCORD_TOKEN;
 
 var prefix = '*';
@@ -146,6 +147,7 @@ function addBirthdayAdmin(msg) {
             name = data.id;
             console.log("/birthday add " + name + " " + day + "-" + month + "-" + year + "-" + idTemp);
             verifBirthday(idTemp, name).then(function() {
+                //Creation de l'objet JSON Birthday
                 var jsonData = '{"id":"' + idTemp + '"' + ',"name":"' + name + '"' +',"day":"' + day +'"' + ',"month":"' + month +'"' +',"year":"' + year +'"' + ',"label":"' + label +'"' +',"etat":"false"}';
                 var student = JSON.parse(jsonData);
                 tabBirthhday.Birthday.push(student);
@@ -200,20 +202,17 @@ function addBirthday(msg) {
         
 }
 
-function loadBirthday() {
-    fs.readFile('Birthday.json', 'utf8', (err, jsonString) => {
-        if (err) {
-            console.log("File read failed:", err)
-            return
-        } else {
-            try {
-                tabBirthhday = JSON.parse(jsonString);
-                stringifyBirthday = JSON.stringify(tabBirthhday.Birthday);
-        } catch(err) {
-                console.log('Error parsing Birthday JSON string:', err)
-            } 
-        }
-    });
+async function loadBirthday() {
+    const config = {
+        method: 'get',
+        // the API that give data is on the same server than the bot
+        //https://github.com/Mr-Titos/Data-Center-API
+        url: 'http://localhost:4242',
+        headers: { 'method': 'all', 'file': 'birthday.json' }
+    }
+    let res = await axios(config);
+    tabBirthhday = res.data; // Axios has already do JSON.parse()
+    stringifyBirthday = JSON.stringify(tabBirthhday.Birthday);
 }
 
 function processBirthdayAdmin(msg) {
